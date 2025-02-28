@@ -10,12 +10,28 @@ def Gaussian(x,s,m):
 
 ##  Define a system of particles with a Gaussian size distribution
 
+
+WIDTH, HEIGHT = 800, 600
+
+MARGIN_BUFFER = 100
+
 class np_config:
-    x = 0
+
+    def __init__(self):
+        self.x = rint(0+MARGIN_BUFFER,WIDTH-MARGIN_BUFFER)
+        self.y = rint(0+MARGIN_BUFFER,HEIGHT-MARGIN_BUFFER)
+        self.vx = rint(0,40)/10
+        self.vy = rint(0,40)/10
+        self.R = rint(0,10)
+
+
+N = 100
+
+Particles =  [np_config() for _ in range(N)]
 
 
 
-    
+
 
 import numpy as np
 
@@ -23,7 +39,6 @@ import numpy as np
 pygame.init()
 
 # Screen settings
-WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Moving Circle with Velocity")
 
@@ -32,12 +47,11 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 
 # Circle properties
-radius = 20
-position = np.array([WIDTH // 2, HEIGHT // 2], dtype=float)  # Position vector
-velocity = np.array([3, 2], dtype=float)  # Velocity vector
 
 # Clock for controlling FPS
 clock = pygame.time.Clock()
+
+delta_time = 1.00
 
 running = True
 while running:
@@ -49,16 +63,18 @@ while running:
             running = False
 
     # Update position with velocity
-    position += velocity
+    for p in Particles:
+        p.x += delta_time * p.vx
+        p.y += delta_time * p.vy
 
-    # Bounce off walls
-    if position[0] - radius <= 0 or position[0] + radius >= WIDTH:
-        velocity[0] *= -1  # Reverse X velocity
-    if position[1] - radius <= 0 or position[1] + radius >= HEIGHT:
-        velocity[1] *= -1  # Reverse Y velocity
+        # Bounce off walls
+        if p.x - p.R <= 0 or p.x + p.R >= WIDTH:
+            p.vx *= -1  # Reverse X velocity
+        if p.y - p.R <= 0 or p.y + p.R >= HEIGHT:
+            p.vy *= -1  # Reverse Y velocity
 
-    # Draw the circle
-    pygame.draw.circle(screen, RED, position.astype(int), radius)
+        # Draw the circle
+        pygame.draw.circle(screen, RED, [p.x, p.y], p.R)
 
     # Update the display
     pygame.display.flip()
