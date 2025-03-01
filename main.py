@@ -30,9 +30,6 @@ N = 100
 Particles =  [np_config() for _ in range(N)]
 
 
-
-
-
 import numpy as np
 
 # Initialize Pygame
@@ -62,10 +59,17 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Update position with velocity
+    # Update position for each particle in the system
     for p in Particles:
         p.x += delta_time * p.vx
         p.y += delta_time * p.vy
+
+        ##  Momentum Exchance Calculation
+        for q in Particles:
+            if p.x - p.R <= 0 or p.x + p.R >= WIDTH:
+                p.vx *= -1  # Reverse X velocity
+            if p.y - p.R <= 0 or p.y + p.R >= HEIGHT:
+                p.vy *= -1  # Reverse Y velocity
 
         # Bounce off walls
         if p.x - p.R <= 0 or p.x + p.R >= WIDTH:
