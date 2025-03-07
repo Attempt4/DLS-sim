@@ -2,12 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pygame
 
+from scipy.fft import fft
+
 import numpy as np
 
 from random import randint as rint
 
 
-
+##  Gaussian Distribution functions - normalised
 def Gaussian(x,s,m):
 
     norm = np.sqrt(2 * np.pi * s)
@@ -18,14 +20,11 @@ def Gaussian(x,s,m):
 
 ##  For x values between 0 and 1 only
 def reverse_Gaussian(x,s,m):
-    parity = (-1)**rint(1,2)
+    parity = (-1) ** rint(1,10)
 
     norm = np.sqrt(2 * np.pi * s)
 
-    return m + parity * s * (-np.log(x))**0.5
-
-
-
+    return m - parity * s * (-np.log(x))**0.5
 
 
 
@@ -35,8 +34,8 @@ WIDTH, HEIGHT = 800, 600
 
 MARGIN_BUFFER = 40
 
-par_mu = 5
-par_sigma = 1
+par_mu = 2.00
+par_sigma = 0.70
 
 
 class np_config:
@@ -47,42 +46,44 @@ class np_config:
 
         self.x = rint(0+MARGIN_BUFFER,WIDTH-MARGIN_BUFFER)
         self.y = rint(0+MARGIN_BUFFER,HEIGHT-MARGIN_BUFFER)
-        self.vx = rint(-40,40)/10
-        self.vy = rint(-40,40)/10
+        self.vx = reverse_Gaussian(rint(0,100)*0.01, 2.00, 0.00)
+        self.vy = reverse_Gaussian(rint(0,100)*0.01, 2.00, 0.00)
         self.R = seed
 
 
 ##  Define an array of N Particle objects
 
-N = 200
+N = 300
+
+
+Intensity_fluc_ = []
+
 
 Particles =  [np_config() for _ in range(N)]
 
 P_R = [float(Particles[_].R) for _ in range(N)]
 
-for i in P_R:
-    print(i)
-plt.hist(np.array(P_R), 20, range=[par_mu - 2*par_sigma, par_mu + 2*par_sigma])
+#plt.hist(np.array(P_R), 15, range=[par_mu - 2*par_sigma, par_mu + 2*par_sigma])
 
-plt.show()
+#plt.show()
 
-# Initialize Pygame
+##  Initialize Pygame
 pygame.init()
 
-# Screen settings
+##  Screen settings
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Moving Circle with Velocity")
 
-# Colors
+##  Colors
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 
 QUAD = 120
 
-# Circle properties
+##  Circle properties
 
-# Clock for controlling FPS
+##  Clock for controlling FPS
 clock = pygame.time.Clock()
 
 delta_time = 0.1
@@ -90,15 +91,21 @@ delta_time = 0.1
 
 
 running = True
-while running:
-    screen.fill(WHITE)  # Clear screen
 
-    # Event handling
+for i in range(1000):
+
+    if i % 1000 == 0:
+        print(i)
+
+    shield_buffer = 0
+    screen.fill(WHITE)  ##  Clear screen
+
+    ##  Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # Update position for each particle in the system
+    ##  Update position for each particle in the system
     for p in Particles:
 
         ##  Update Velocity
@@ -122,21 +129,39 @@ while running:
 
                 
 
-        # Bounce off walls
+        ##  Bounce off walls
         if p.x - p.R <= 0 or p.x + p.R >= WIDTH:
             p.vx *= -1  # Reverse X velocity
         if p.y - p.R <= 0 or p.y + p.R >= HEIGHT:
             p.vy *= -1  # Reverse Y velocity
 
 
-        # Draw the circle
-        pygame.draw.circle(screen, RED, [p.x, p.y], p.R)
-        pygame.draw.rect(screen, BLUE, pygame.Rect(0.5 * (WIDTH-QUAD), 0.5 * (HEIGHT-QUAD), QUAD, QUAD),  2)
+        ##  Bound within Quadrat
+        if (p.x >= 0.5 * ( WIDTH - QUAD ) and p.x <= 0.5 * ( WIDTH + QUAD )) and (p.y >= 0.5 * ( HEIGHT - QUAD ) and p.y <= 0.5 * ( HEIGHT + QUAD )):
+            shield_buffer += p.R**2
 
-    # Update the display
+
+
+        ##  Draw the circle
+        pygame.draw.circle(screen, RED, [p.x, p.y], p.R)
+        pygame.draw.rect(screen, BLUE, pygame.Rect(0.5 * ( WIDTH - QUAD ), 0.5 * ( HEIGHT - QUAD ), QUAD, QUAD),  2)
+
+    ##  Update the display
     pygame.display.flip()
 
-    # Limit FPS
-    clock.tick(60)
+    ##  Limit FPS
+    #clock.tick(120)
+
+    Intensity_fluc_.append(np.pi * shield_buffer * QUAD**-2)
+
+    #print(np.pi * shield_buffer * QUAD**-2)
+
+Intensity_fluc_ = np.array(Intensity_fluc_)
+
+fluc_Spectrum_ = fft(Intensity_fluc_)
+
+plt.plot(fluc_Spectrum_)
+
+plt.show()
 
 pygame.quit()
